@@ -206,6 +206,15 @@ export async function createShop(req, res) {
       return res.status(404).json(errorResponse('营业执照号对应的公司主体不存在', 404))
     }
 
+    // 校验是否存在同店铺名同平台的记录
+    const existingShop = await shopsCollection.findOne({
+      shopName,
+      platform,
+    })
+    if (existingShop) {
+      return res.status(400).json(errorResponse(`店铺名称"${shopName}"在平台"${platform}"中已存在，不能重复添加`, 400))
+    }
+
     const now = new Date()
     const userId = req.user?.userId || null
 
@@ -296,6 +305,20 @@ export async function updateShop(req, res) {
       const validPlatforms = ['douyin', 'taobao', 'jd', 'pdd']
       if (!validPlatforms.includes(platform)) {
         return res.status(400).json(errorResponse('无效的平台类型', 400))
+      }
+    }
+
+    // 如果修改了店铺名或平台，需要校验是否存在同店铺名同平台的记录（排除当前店铺）
+    const finalShopName = shopName !== undefined ? shopName : existing.shopName
+    const finalPlatform = platform !== undefined ? platform : existing.platform
+    if (shopName !== undefined || platform !== undefined) {
+      const duplicateShop = await shopsCollection.findOne({
+        shopName: finalShopName,
+        platform: finalPlatform,
+        _id: { $ne: new ObjectId(id) }, // 排除当前店铺
+      })
+      if (duplicateShop) {
+        return res.status(400).json(errorResponse(`店铺名称"${finalShopName}"在平台"${finalPlatform}"中已存在，不能重复添加`, 400))
       }
     }
 

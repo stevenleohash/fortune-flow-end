@@ -120,6 +120,12 @@ export async function createCompany(req, res) {
     const db = getDatabase()
     const companiesCollection = db.collection('companies')
 
+    // 检查公司名称是否重复
+    const existingByName = await companiesCollection.findOne({ companyName })
+    if (existingByName) {
+      return res.status(400).json(errorResponse(`公司名称"${companyName}"已存在，不能重复添加`, 400))
+    }
+
     // 检查营业执照号是否重复
     if (businessLicense) {
       const existing = await companiesCollection.findOne({ businessLicense })
@@ -178,6 +184,17 @@ export async function updateCompany(req, res) {
     const existing = await companiesCollection.findOne({ _id: new ObjectId(id) })
     if (!existing) {
       return res.status(404).json(errorResponse('公司主体不存在', 404))
+    }
+
+    // 检查公司名称是否重复（排除自己）
+    if (companyName && companyName !== existing.companyName) {
+      const duplicateByName = await companiesCollection.findOne({
+        companyName,
+        _id: { $ne: new ObjectId(id) }, // 排除当前公司
+      })
+      if (duplicateByName) {
+        return res.status(400).json(errorResponse(`公司名称"${companyName}"已存在，不能重复添加`, 400))
+      }
     }
 
     // 检查营业执照号是否重复（排除自己）
