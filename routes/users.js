@@ -1,9 +1,14 @@
-var express = require('express');
-var router = express.Router();
+import express from 'express'
+
+const router = express.Router()
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router.get('/', (req, res) => {
+  res.json({
+    code: 200,
+    message: 'Users API',
+    data: null,
+  })
+})
 
-module.exports = router;
+export default router
