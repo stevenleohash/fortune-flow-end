@@ -2,6 +2,13 @@ import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fortune-flow-secret-key-change-in-production'
 
+export function verifyToken(token) {
+  if (!token) {
+    throw new Error('Token is required')
+  }
+  return jwt.verify(token, JWT_SECRET)
+}
+
 /**
  * JWT 认证中间件
  */
@@ -18,7 +25,7 @@ export function authenticateToken(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = verifyToken(token)
     req.user = decoded
     next()
   } catch (error) {

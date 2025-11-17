@@ -1,4 +1,5 @@
 import { WebSocketServer } from 'ws'
+import { verifyToken } from '../middleware/auth.js'
 
 /**
  * WebSocket 服务
@@ -24,7 +25,25 @@ class WebSocketService {
 
     this.wss.on('connection', (ws, req) => {
       const clientId = `${req.socket.remoteAddress}:${req.socket.remotePort}`
-      console.log(`[WebSocketService] 客户端连接: ${clientId}`)
+
+      const token = this.extractTokenFromRequest(req)
+      if (!token) {
+        console.warn(`[WebSocketService] 拒绝未提供 token 的连接: ${clientId}`)
+        ws.close(4401, 'Unauthorized')
+        return
+      }
+
+      try {
+        const decoded = verifyToken(token)
+        ws.user = decoded
+      }
+      catch (error) {
+        console.warn(`[WebSocketService] token 校验失败，连接被拒绝: ${clientId}`, error.message)
+        ws.close(4401, 'Invalid token')
+        return
+      }
+
+      console.log(`[WebSocketService] 客户端连接: ${clientId}`, ws.user)
 
       this.clients.add(ws)
 
@@ -68,6 +87,17 @@ class WebSocketService {
     this.wss.on('error', (error) => {
       console.error('[WebSocketService] WebSocket 服务错误:', error)
     })
+  }
+
+  extractTokenFromRequest(req) {
+    try {
+      const url = new URL(req.url, 'http://localhost')
+      return url.searchParams.get('token')
+    }
+    catch (error) {
+      console.error('[WebSocketService] 解析连接 token 失败:', error)
+      return null
+    }
   }
 
   /**

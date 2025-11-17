@@ -1,7 +1,12 @@
 import { MongoClient } from 'mongodb'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017'
-const DATABASE_NAME = process.env.DATABASE_NAME || 'fortune_flow'
+const DATABASE_NAME = 'fortune_flow'
+const MONGODB_URI = 'mongodb://admin1:123456@127.0.0.1:27017/?authSource=fortune_flow'
+const mongoOptions = {
+  maxPoolSize: 20,
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
+}
 
 let client = null
 let db = null
@@ -10,19 +15,19 @@ let db = null
  * 连接 MongoDB 数据库
  */
 export async function connectDatabase() {
-  if (client && db) {
+  if (db) {
     return db
   }
 
   try {
-    client = new MongoClient(MONGODB_URI)
+    client = new MongoClient(MONGODB_URI, mongoOptions)
     await client.connect()
     db = client.db(DATABASE_NAME)
-    console.log('✅ MongoDB 连接成功')
-    
+    console.log(`✅ MongoDB 连接成功，数据库：${DATABASE_NAME}`)
+
     // 初始化默认用户
     await initDefaultUser()
-    
+
     return db
   } catch (error) {
     console.error('❌ MongoDB 连接失败:', error)
@@ -59,11 +64,11 @@ async function initDefaultUser() {
   try {
     const usersCollection = db.collection('users')
     const existingUser = await usersCollection.findOne({ username: 'admin' })
-    
+
     if (!existingUser) {
       const bcrypt = await import('bcrypt')
       const hashedPassword = await bcrypt.default.hash('123456', 10)
-      
+
       await usersCollection.insertOne({
         username: 'admin',
         password: hashedPassword,

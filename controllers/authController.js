@@ -28,14 +28,14 @@ export async function login(req, res) {
     const user = await usersCollection.findOne({ username })
 
     if (!user) {
-      return res.status(401).json(errorResponse('用户名或密码错误', 401))
+      return res.status(422).json(errorResponse('用户名或密码错误', 422))
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
-      return res.status(401).json(errorResponse('用户名或密码错误', 401))
+      return res.status(422).json(errorResponse('用户名或密码错误', 422))
     }
 
     // 检查用户状态
