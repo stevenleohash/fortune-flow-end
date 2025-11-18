@@ -31,16 +31,16 @@ connectDatabase()
   .then(async () => {
     dbReady = true
     console.log('✅ 数据库连接就绪')
-    
+
     // 初始化任务集合和索引
     await initTaskCollections()
-    
+
     // 启动 WebSocket 服务（使用与 HTTP 相同的端口）
     // 注意：WebSocket 和 HTTP 可以共享同一个端口，但需要不同的路径
     // 这里使用不同的端口，避免冲突
-    const wsPort = process.env.WS_PORT || 3001
+    const wsPort = Number(process.env.WS_PORT || (process.env.NODE_ENV === 'production' ? 8634 : 3001))
     websocketService.start(wsPort)
-    
+
     // 启动任务调度器
     await taskScheduler.start()
   })
@@ -134,31 +134,31 @@ app.use((err, req, res, next) => {
 async function initTaskCollections() {
   try {
     const db = getDatabase()
-    
+
     // 初始化 scheduled_tasks 集合
     const tasksCollection = db.collection('scheduled_tasks')
-    
+
     // 创建唯一索引：确保每个店铺的每个任务类型只能有一个
     await tasksCollection.createIndex(
       { shopId: 1, taskType: 1 },
       { unique: true, name: 'shopId_taskType_unique' }
     )
-    
+
     // 创建其他索引
     await tasksCollection.createIndex({ enabled: 1 })
     await tasksCollection.createIndex({ status: 1 })
     await tasksCollection.createIndex({ createdAt: -1 })
-    
+
     console.log('✅ 任务集合索引初始化完成')
-    
+
     // 初始化 task_executions 集合
     const executionsCollection = db.collection('task_executions')
-    
+
     // 创建索引
     await executionsCollection.createIndex({ taskId: 1, startedAt: -1 })
     await executionsCollection.createIndex({ shopId: 1, startedAt: -1 })
     await executionsCollection.createIndex({ status: 1 })
-    
+
     console.log('✅ 任务执行记录集合索引初始化完成')
   }
   catch (error) {

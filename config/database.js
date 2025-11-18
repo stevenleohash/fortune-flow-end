@@ -3,8 +3,9 @@ import { MongoClient } from 'mongodb'
 const DATABASE_NAME = 'fortune_flow'
 const PROD_MONGO_URI = 'mongodb://admin1:123456@106.53.78.192:27017/?authSource=fortune_flow'
 const LOCAL_MONGO_URI = 'mongodb://admin1:123456@127.0.0.1:27017/?authSource=fortune_flow'
-const MONGODB_URI = PROD_MONGO_URI // 生产
-// const MONGODB_URI = LOCAL_MONGO_URI // 本地
+const MONGODB_URI = process.env.NODE_ENV === 'production'
+  ? PROD_MONGO_URI
+  : LOCAL_MONGO_URI
 const mongoOptions = {
   maxPoolSize: 20,
   connectTimeoutMS: 10000,
