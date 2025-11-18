@@ -5,9 +5,10 @@
  */
 
 import 'dotenv/config'
-import app from '../app.js'
 import debug from 'debug'
 import http from 'http'
+import app from '../app.js'
+import { websocketService } from '../services/websocketService.js'
 
 const debugLog = debug('fortune-flow-end:server')
 
@@ -24,6 +25,8 @@ app.set('port', port)
  */
 
 const server = http.createServer(app)
+const wsPath = process.env.WS_PATH || '/ws'
+websocketService.start({ server, path: wsPath })
 
 /**
  * Listen on provided port, on all network interfaces.

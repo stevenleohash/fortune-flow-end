@@ -13,15 +13,32 @@ class WebSocketService {
 
   /**
    * 启动 WebSocket 服务
-   * @param {number} port - WebSocket 端口，默认 3000
+   * @param {object|number} options - 复用 HTTP server 或独立端口
+   * @param {import('http').Server} [options.server] - 已存在的 HTTP server
+   * @param {string} [options.path='/ws'] - 当复用 HTTP server 时监听路径
+   * @param {number} [options.port=3000] - 独立监听端口
    */
-  start(port = 3000) {
+  start(options = {}) {
     if (this.wss) {
       console.log('[WebSocketService] WebSocket 服务已启动')
       return
     }
 
-    this.wss = new WebSocketServer({ port })
+    let server = null
+    let path = '/ws'
+    let port = 3000
+
+    if (typeof options === 'number') {
+      port = options
+    } else {
+      server = options.server ?? null
+      path = options.path ?? path
+      port = options.port ?? port
+    }
+
+    this.wss = server
+      ? new WebSocketServer({ server, path })
+      : new WebSocketServer({ port })
 
     this.wss.on('connection', (ws, req) => {
       const clientId = `${req.socket.remoteAddress}:${req.socket.remotePort}`
@@ -81,7 +98,11 @@ class WebSocketService {
     })
 
     this.wss.on('listening', () => {
-      console.log(`[WebSocketService] WebSocket 服务已启动，端口: ${port}`)
+      if (server) {
+        console.log(`[WebSocketService] WebSocket 服务已绑定到 HTTP Server，路径: ${path}`)
+      } else {
+        console.log(`[WebSocketService] WebSocket 服务已启动，端口: ${port}`)
+      }
     })
 
     this.wss.on('error', (error) => {

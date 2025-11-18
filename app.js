@@ -35,12 +35,6 @@ connectDatabase()
     // 初始化任务集合和索引
     await initTaskCollections()
 
-    // 启动 WebSocket 服务（使用与 HTTP 相同的端口）
-    // 注意：WebSocket 和 HTTP 可以共享同一个端口，但需要不同的路径
-    // 这里使用不同的端口，避免冲突
-    const wsPort = Number(process.env.WS_PORT || (process.env.NODE_ENV === 'production' ? 8633 : 3001))
-    websocketService.start(wsPort)
-
     // 启动任务调度器
     await taskScheduler.start()
   })
